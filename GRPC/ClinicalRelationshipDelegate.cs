@@ -51,7 +51,7 @@ namespace ProtoApp.GRPC
                 join organization in _context.Organizations on relationship.Id equals organization.RelationshipId
                 join program in _context.OrganizationPrograms on organization.Id equals program.OrganizationId
                 join practitioner in _context.Practitioners on relationship.Id equals practitioner.RelationshipId
-                where patient.Id == 1
+                where patient.Eid.Equals(clinicalRelationshipRequest.PatientIdentifiers.Eid)
                 select
                     new RelationshipDTO
                     {
@@ -136,8 +136,18 @@ namespace ProtoApp.GRPC
         public string LastName { get; set; }
         public string MiddleName { get; set; }
         public string DisplayName { get; set; }
-    }
 
+        public Name ToGrpcName()
+        {
+            return new Name
+            {
+                Firstname = null,
+                MiddleName = null,
+                LastName = null,
+                DisplayName = null
+            };
+        }
+    }
     public class AddressDTO
     {
         public string City { get; set; }
@@ -146,20 +156,17 @@ namespace ProtoApp.GRPC
         public string AddressLine1 { get; set; }
         public string AddressLine2 { get; set; }
     }
-
     public class PhoneNumberDTO
     {
         public string Type { get; set; }
         public string Number { get; set; }
     }
-
     public class RelationshipDTO
     {
         public OrganizationDTO Organization { get; set; }
         public PractitionerDTO Practitioner { get; set; }
         public ProgramDTO Program { get; set; }
     }
-
     public class ProgramDTO
     {
         public long Id { get; set; }
@@ -187,7 +194,6 @@ namespace ProtoApp.GRPC
         public ContactInformationDTO ContactInformation { get; set; }
         public AddressDTO Address { get; set; }
     }
-
     public class ContactInformationDTO
     {
         public PhoneNumberDTO Phone { get; set; }
