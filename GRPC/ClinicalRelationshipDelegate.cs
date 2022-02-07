@@ -22,7 +22,8 @@ namespace ProtoApp.GRPC
         private readonly ILogger<ClinicalRelationshipDelegate> _logger;
         private readonly PatientRelationshipContext _context;
 
-        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger, PatientRelationshipContext context)
+        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger,
+            PatientRelationshipContext context)
         {
             _logger = logger;
             _context = context;
@@ -48,22 +49,16 @@ namespace ProtoApp.GRPC
                             Name = organization.ParticipantName,
                             Source = organization.ParticipantSourceCode,
                             SubstanceUseDisclosure = organization.SubstancesUseDisclosure,
-                            ContactInformation = new ContactInformationDTO
+                            Demographics = new DemographicsDTO
                             {
-                                Phone = new PhoneNumberDTO
-                                {
-                                    Number = organization.Demographic.PhoneNumber
-                                },
-                                Email = organization.Demographic.Email
-                            },
-                            Address = new AddressDTO
-                            {
+                                PhoneNumber = organization.Demographic.PhoneNumber,
+                                Email = organization.Demographic.Email,
                                 City = organization.Demographic.City,
                                 State = organization.Demographic.State,
                                 Zip = organization.Demographic.Zip,
                                 AddressLine1 = organization.Demographic.AddressLine1,
                                 AddressLine2 = organization.Demographic.AddressLine2
-                            }
+                            },
                         },
                         Program = new ProgramDTO
                         {
@@ -77,24 +72,20 @@ namespace ProtoApp.GRPC
                             Id = practitioner.Id,
                             Name = new NameDTO
                             {
-                                Firstname = string.Empty, LastName = string.Empty, MiddleName = string.Empty,
+                                Firstname = string.Empty,
+                                LastName = string.Empty,
+                                MiddleName = string.Empty,
                                 DisplayName = practitioner.DisplayName
                             },
-                            Address = new AddressDTO
+                            Demographics = new DemographicsDTO
                             {
+                                PhoneNumber = practitioner.Demographic.PhoneNumber,
+                                Email = practitioner.Demographic.Email,
                                 City = practitioner.Demographic.City,
                                 State = practitioner.Demographic.State,
                                 Zip = practitioner.Demographic.Zip,
                                 AddressLine1 = practitioner.Demographic.AddressLine1,
                                 AddressLine2 = practitioner.Demographic.AddressLine2
-                            },
-                            ContactInformation = new ContactInformationDTO
-                            {
-                                Phone = new PhoneNumberDTO
-                                {
-                                    Type = string.Empty, Number = practitioner.Demographic.PhoneNumber
-                                },
-                                Email = practitioner.Demographic.Email
                             },
                             Type = practitioner.Type,
                             OrganizationId = practitioner.OrganizationId
@@ -106,13 +97,14 @@ namespace ProtoApp.GRPC
             var relationships = await relationshipQuery.ToListAsync();
 
             // Organizations
-            var organizations = relationships?.Select(x => x.Organization.ToGrpc() ?? new Organization())?.ToList();
+            var organizations = relationships?.Select(x => x?.Organization?.ToGrpc() ?? new Organization())?.ToList();
 
             // Practitioners
-            var practitioners = relationships?.Select(x => x.Practitioner.ToGrpc() ?? new Practitioner())?.ToList();
+            var practitioners = relationships?.Select(x => x?.Practitioner?.ToGrpc() ?? new Practitioner())?.ToList();
 
             // Programs
-            var programs = relationships?.Select(x => x?.Program?.ToGrpc() ?? new CRISP.GRPC.ClinicalRelationship.Program())?.ToList();
+            var programs = relationships
+                ?.Select(x => x?.Program?.ToGrpc() ?? new CRISP.GRPC.ClinicalRelationship.Program())?.ToList();
 
             // Merge the organizations
             var mergedOrganizations =
@@ -121,21 +113,21 @@ namespace ProtoApp.GRPC
                 select
                     new Organization
                     {
-                        Id = organization.Id,
-                        DataSource = organization.DataSource,
-                        Name = organization.Name,
-                        Source = organization.Source,
-                        SubstanceUseDisclosure = organization.SubstanceUseDisclosure,
-                        ContactInformation = organization.ContactInformation,
-                        Address = organization.Address,
-                        Programs = { program }
+                        Id = organization?.Id ?? Int64.MinValue,
+                        DataSource = organization?.DataSource ?? String.Empty,
+                        Name = organization?.Name ?? String.Empty,
+                        Source = organization?.Source ?? String.Empty,
+                        SubstanceUseDisclosure = organization?.SubstanceUseDisclosure ?? false,
+                        ContactInformation = organization?.ContactInformation ?? new ContactInformation(),
+                        Address = organization?.Address ?? new Address(),
+                        Programs = {program}
                     };
             return new ClinicalRelationshipResponse
             {
                 PatientRelationships = new PatientRelationship
                 {
-                    Organizations = { mergedOrganizations },
-                    Practitioners = { practitioners }
+                    Organizations = {mergedOrganizations},
+                    Practitioners = {practitioners}
                 },
                 Error = null
             };
@@ -143,6 +135,7 @@ namespace ProtoApp.GRPC
     }
 
     #region DataTransferObjects
+
     public class NameDTO
     {
         public string Firstname { get; set; }
@@ -161,26 +154,7 @@ namespace ProtoApp.GRPC
             };
         }
     }
-    public class AddressDTO
-    {
-        public string City { get; set; }
-        public string State { get; set; }
-        public string Zip { get; set; }
-        public string AddressLine1 { get; set; }
-        public string AddressLine2 { get; set; }
 
-        public Address ToGrpc()
-        {
-            return new Address
-            {
-                City = City,
-                State = State,
-                Zip = Zip,
-                AddressLine1 = AddressLine1,
-                AddressLine2 = AddressLine2 ?? string.Empty
-            };
-        }
-    }
     public class PhoneNumberDTO
     {
         public string Type { get; set; }
@@ -188,13 +162,17 @@ namespace ProtoApp.GRPC
 
         public PhoneNumber ToGrpc()
         {
+            if (string.IsNullOrEmpty(Number))
+                return new PhoneNumber();
+
             return new PhoneNumber
             {
                 Number = Number,
-                Type = PhoneNumber.Types.PhoneType.Work // Need to map from Type
+                Type = PhoneNumber.Types.PhoneType.Work
             };
         }
     }
+
     public class RelationshipDTO
     {
         public OrganizationDTO Organization { get; set; }
@@ -217,12 +195,14 @@ namespace ProtoApp.GRPC
             };
         }
     }
+
     public class ProgramDTO
     {
         public long Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public long? OrganizationId { get; set; }
+
         public CRISP.GRPC.ClinicalRelationship.Program ToGrpc()
         {
             return new CRISP.GRPC.ClinicalRelationship.Program
@@ -234,26 +214,30 @@ namespace ProtoApp.GRPC
             };
         }
     }
+
     public class PractitionerDTO
     {
         public long Id { get; set; }
-        public ContactInformationDTO ContactInformation { get; set; }
+        public DemographicsDTO Demographics { get; set; }
         public string Type { get; set; }
         public long? OrganizationId { get; set; }
-        public AddressDTO Address { get; set; }
         public NameDTO Name { get; set; }
+
         public Practitioner ToGrpc()
         {
             return new Practitioner
             {
                 Id = Id,
                 Name = Name.ToGrpc(),
-                Address = Address.ToGrpc(),
-                ContactInformation = ContactInformation.ToGrpc(),
-                Type = Enum.TryParse<Practitioner.Types.ProviderType>(Type, out var type) ? type : Practitioner.Types.ProviderType.None
+                Address = Demographics.ToAddressGrpc(),
+                ContactInformation = Demographics.ToContactInformationGrpc(),
+                Type = Enum.TryParse<Practitioner.Types.ProviderType>(Type, out var type)
+                    ? type
+                    : Practitioner.Types.ProviderType.None
             };
         }
     }
+
     public class OrganizationDTO
     {
         public long Id { get; set; }
@@ -261,35 +245,59 @@ namespace ProtoApp.GRPC
         public string Name { get; set; }
         public string Source { get; set; }
         public bool? SubstanceUseDisclosure { get; set; }
-        public ContactInformationDTO ContactInformation { get; set; }
-        public AddressDTO Address { get; set; }
+        public DemographicsDTO Demographics { get; set; }
+
         public Organization ToGrpc()
         {
             return new Organization
             {
                 Id = Id,
-                DataSource = DataSource,
-                Name = Name,
-                Source = Source,
+                DataSource = DataSource ?? String.Empty,
+                Name = Name ?? String.Empty,
+                Source = Source ?? String.Empty,
                 SubstanceUseDisclosure = SubstanceUseDisclosure ?? false,
-                ContactInformation = ContactInformation.ToGrpc(),
-                Address = Address.ToGrpc()
+                ContactInformation = Demographics?.ToContactInformationGrpc() ?? new ContactInformation(),
+                Address = Demographics?.ToAddressGrpc() ?? new Address()
             };
         }
     }
-    public class ContactInformationDTO
-    {
-        public PhoneNumberDTO Phone { get; set; }
-        public string Email { get; set; }
 
-        public ContactInformation ToGrpc()
+    public class DemographicsDTO
+    {
+        public string PhoneNumber { get; set; }
+        public string PhoneType { get; set; }
+        public string Email { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+        public string Zip { get; set; }
+        public string AddressLine1 { get; set; }
+        public string AddressLine2 { get; set; }
+
+        public Address ToAddressGrpc()
+        {
+            return new Address
+            {
+                City = City ?? String.Empty,
+                State = State ?? String.Empty,
+                Zip = Zip ?? String.Empty,
+                AddressLine1 = AddressLine1 ?? String.Empty,
+                AddressLine2 = AddressLine2 ?? String.Empty
+            };
+        }
+
+        public ContactInformation ToContactInformationGrpc()
         {
             return new ContactInformation
             {
-                Phone = Phone.ToGrpc(),
-                Email = Email
+                Phone = new PhoneNumber
+                {
+                    Number = PhoneNumber ?? string.Empty,
+                    Type = CRISP.GRPC.ClinicalRelationship.PhoneNumber.Types.PhoneType.None
+                },
+                Email = Email ?? String.Empty
             };
         }
     }
+
     #endregion
 }
