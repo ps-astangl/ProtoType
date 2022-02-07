@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Context.Context;
@@ -6,9 +7,9 @@ using Context.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Address = CRISP.GRPC.ClinicalRelationship.Address;
 using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
 using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
+using Program = CRISP.GRPC.ClinicalRelationship.Program;
 
 namespace ProtoApp.GRPC
 {
@@ -113,21 +114,21 @@ namespace ProtoApp.GRPC
                 select
                     new Organization
                     {
-                        Id = organization?.Id ?? Int64.MinValue,
+                        Id = organization?.Id ?? string.Empty,
                         DataSource = organization?.DataSource ?? String.Empty,
                         Name = organization?.Name ?? String.Empty,
                         Source = organization?.Source ?? String.Empty,
                         SubstanceUseDisclosure = organization?.SubstanceUseDisclosure ?? false,
                         ContactInformation = organization?.ContactInformation ?? new ContactInformation(),
                         Address = organization?.Address ?? new Address(),
-                        Programs = {program}
+                        Programs = { program }
                     };
             return new ClinicalRelationshipResponse
             {
                 PatientRelationships = new PatientRelationship
                 {
-                    Organizations = {mergedOrganizations},
-                    Practitioners = {practitioners}
+                    Organizations = { mergedOrganizations?.ToList() ?? new List<Organization>() },
+                    Practitioners = { practitioners }
                 },
                 Error = null
             };
@@ -155,23 +156,6 @@ namespace ProtoApp.GRPC
         }
     }
 
-    public class PhoneNumberDTO
-    {
-        public string Type { get; set; }
-        public string Number { get; set; }
-
-        public PhoneNumber ToGrpc()
-        {
-            if (string.IsNullOrEmpty(Number))
-                return new PhoneNumber();
-
-            return new PhoneNumber
-            {
-                Number = Number,
-                Type = PhoneNumber.Types.PhoneType.Work
-            };
-        }
-    }
 
     public class RelationshipDTO
     {
@@ -207,10 +191,10 @@ namespace ProtoApp.GRPC
         {
             return new CRISP.GRPC.ClinicalRelationship.Program
             {
-                Id = Id,
+                Id = Id.ToString() ?? string.Empty,
                 Name = Name,
                 Description = Description,
-                OrganizationId = OrganizationId ?? 0
+                OrganizationId = OrganizationId?.ToString() ?? string.Empty
             };
         }
     }
@@ -227,7 +211,7 @@ namespace ProtoApp.GRPC
         {
             return new Practitioner
             {
-                Id = Id,
+                Id = Id.ToString() ?? string.Empty,
                 Name = Name.ToGrpc(),
                 Address = Demographics.ToAddressGrpc(),
                 ContactInformation = Demographics.ToContactInformationGrpc(),
@@ -251,10 +235,10 @@ namespace ProtoApp.GRPC
         {
             return new Organization
             {
-                Id = Id,
-                DataSource = DataSource ?? String.Empty,
-                Name = Name ?? String.Empty,
-                Source = Source ?? String.Empty,
+                Id = Id.ToString(),
+                DataSource = DataSource ?? string.Empty,
+                Name = Name ?? string.Empty,
+                Source = Source ?? string.Empty,
                 SubstanceUseDisclosure = SubstanceUseDisclosure ?? false,
                 ContactInformation = Demographics?.ToContactInformationGrpc() ?? new ContactInformation(),
                 Address = Demographics?.ToAddressGrpc() ?? new Address()
@@ -277,11 +261,11 @@ namespace ProtoApp.GRPC
         {
             return new Address
             {
-                City = City ?? String.Empty,
-                State = State ?? String.Empty,
-                Zip = Zip ?? String.Empty,
-                AddressLine1 = AddressLine1 ?? String.Empty,
-                AddressLine2 = AddressLine2 ?? String.Empty
+                City = City ?? string.Empty,
+                State = State ?? string.Empty,
+                Zip = Zip ?? string.Empty,
+                AddressLine1 = AddressLine1 ?? string.Empty,
+                AddressLine2 = AddressLine2 ?? string.Empty
             };
         }
 
@@ -294,7 +278,7 @@ namespace ProtoApp.GRPC
                     Number = PhoneNumber ?? string.Empty,
                     Type = CRISP.GRPC.ClinicalRelationship.PhoneNumber.Types.PhoneType.None
                 },
-                Email = Email ?? String.Empty
+                Email = Email ?? string.Empty
             };
         }
     }
