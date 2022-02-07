@@ -14,5 +14,8 @@
     <ItemGroup>
         <PackageReference Include="CRISP.GRPC.ClinicalRelationships" Version="0.0.21" />
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Context\Context.csproj" />
+    </ItemGroup>
 
 </Project>

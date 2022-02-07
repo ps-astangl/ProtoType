@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Context.Context;
+using Context.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
-using Google.Protobuf.Collections;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Logging;
-using ProtoApp.Context;
-using ProtoApp.Context.Models;
 using Address = CRISP.GRPC.ClinicalRelationship.Address;
 using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
 using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
@@ -55,17 +52,17 @@ namespace ProtoApp.GRPC
                             {
                                 Phone = new PhoneNumberDTO
                                 {
-                                    Number = organization.Contact.PhoneNumber
+                                    Number = organization.Demographic.PhoneNumber
                                 },
-                                Email = organization.Contact.Email
+                                Email = organization.Demographic.Email
                             },
                             Address = new AddressDTO
                             {
-                                City = organization.Address.City,
-                                State = organization.Address.State,
-                                Zip = organization.Address.Zip,
-                                AddressLine1 = organization.Address.AddressLine1,
-                                AddressLine2 = organization.Address.AddressLine2
+                                City = organization.Demographic.City,
+                                State = organization.Demographic.State,
+                                Zip = organization.Demographic.Zip,
+                                AddressLine1 = organization.Demographic.AddressLine1,
+                                AddressLine2 = organization.Demographic.AddressLine2
                             }
                         },
                         Program = new ProgramDTO
@@ -80,24 +77,24 @@ namespace ProtoApp.GRPC
                             Id = practitioner.Id,
                             Name = new NameDTO
                             {
-                                Firstname = String.Empty, LastName = String.Empty, MiddleName = String.Empty,
+                                Firstname = string.Empty, LastName = string.Empty, MiddleName = string.Empty,
                                 DisplayName = practitioner.DisplayName
                             },
                             Address = new AddressDTO
                             {
-                                City = practitioner.Address.City,
-                                State = practitioner.Address.State,
-                                Zip = practitioner.Address.Zip,
-                                AddressLine1 = practitioner.Address.AddressLine1,
-                                AddressLine2 = practitioner.Address.AddressLine2
+                                City = practitioner.Demographic.City,
+                                State = practitioner.Demographic.State,
+                                Zip = practitioner.Demographic.Zip,
+                                AddressLine1 = practitioner.Demographic.AddressLine1,
+                                AddressLine2 = practitioner.Demographic.AddressLine2
                             },
                             ContactInformation = new ContactInformationDTO
                             {
                                 Phone = new PhoneNumberDTO
                                 {
-                                    Type = string.Empty, Number = practitioner.Contact.PhoneNumber
+                                    Type = string.Empty, Number = practitioner.Demographic.PhoneNumber
                                 },
-                                Email = practitioner.Contact.Email
+                                Email = practitioner.Demographic.Email
                             },
                             Type = practitioner.Type,
                             OrganizationId = practitioner.OrganizationId
