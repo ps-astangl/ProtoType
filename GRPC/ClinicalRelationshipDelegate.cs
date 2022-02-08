@@ -141,6 +141,7 @@ namespace ProtoApp.GRPC
             return response;
         }
 
+        // Practitioner
         private static List<CRISP.GRPC.ClinicalRelationship.Practitioner> MapPractitioner(List<PractitionerDto> practitionerResult)
         {
             var practitioners = practitionerResult
