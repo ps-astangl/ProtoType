@@ -9,6 +9,28 @@ namespace ProtoApp.Models.Mapping
 {
     public static class Mapper
     {
+        public static Practitioner MapPractitioner(PractitionerDto input)
+        {
+            if (input == null)
+                return null;
+
+            var licenseInformation = MapLicenseInformation(input.LicenseInformation);
+            Practitioner practitioner = new Practitioner
+            {
+                Id = input.Id,
+                Name = input.Name.ToGrpc(),
+                Address = input.Demographics.MapAddress(),
+                ContactInformation = input.Demographics.MapContactInformation(),
+                Type = Enum.TryParse<Practitioner.Types.ProviderType>(input.MedicalSpeciality, true, out var type) ?
+                    type : Practitioner.Types.ProviderType.None,
+                LicenseInformation = { }
+            };
+            if (licenseInformation != null)
+                practitioner.LicenseInformation.Add(licenseInformation);
+
+            return practitioner;
+        }
+
         public static Organization MapOrganization(OrganizationDto input)
         {
             if (input == null)
@@ -17,11 +39,11 @@ namespace ProtoApp.Models.Mapping
             Organization organization = new Organization
             {
                 Id = input.Id,
-                Name = input.Name,
-                Source = input.Source,
-                DataSource = input.DataSource,
+                Name = input.Name.StringOrEmpty(),
+                Source = input.Source.StringOrEmpty(),
+                DataSource = input.DataSource.StringOrEmpty(),
                 SubstanceUseDisclosure = input.SubstanceUseDisclosure.GetValueOrDefault(),
-                Address = input?.Demographics?.MapAddress(),
+                Address = input.Demographics?.MapAddress(),
                 ContactInformation = input?.Demographics?.MapContactInformation(),
             };
             return organization;
@@ -34,11 +56,11 @@ namespace ProtoApp.Models.Mapping
 
             Address address = new Address
             {
-                City = demographicsDto.City ?? string.Empty,
-                State = demographicsDto.State ?? string.Empty,
-                Zip = demographicsDto.Zip ?? string.Empty,
-                AddressLine1 = demographicsDto.AddressLine1 ?? string.Empty,
-                AddressLine2 = demographicsDto.AddressLine2 ?? string.Empty,
+                City = demographicsDto.City.StringOrEmpty(),
+                State = demographicsDto.State.StringOrEmpty(),
+                Zip = demographicsDto.Zip.StringOrEmpty(),
+                AddressLine1 = demographicsDto.AddressLine1.StringOrEmpty(),
+                AddressLine2 = demographicsDto.AddressLine2.StringOrEmpty(),
             };
             return address;
         }
@@ -50,9 +72,9 @@ namespace ProtoApp.Models.Mapping
 
             return new ContactInformation
             {
-                Phonenumber = demographicsDto.PhoneNumber ?? string.Empty,
+                Phonenumber = demographicsDto.PhoneNumber.StringOrEmpty(),
                 Type = Enum.TryParse<ContactInformation.Types.PhoneType>(demographicsDto.PhoneType, true, out var phoneType) ? phoneType : ContactInformation.Types.PhoneType.None,
-                Email = demographicsDto.Email ?? string.Empty
+                Email = demographicsDto.Email.StringOrEmpty()
             };
         }
 
@@ -64,12 +86,48 @@ namespace ProtoApp.Models.Mapping
             return new CRISP.GRPC.ClinicalRelationship.Program
             {
                 Id = programDto.Id,
-                Name = programDto.Name ?? string.Empty,
-                Description = programDto.Description ?? string.Empty,
+                Name = programDto.Name.StringOrEmpty(),
+                Description = programDto.Description.StringOrEmpty(),
                 ContactInformation = null, // TODO: Find Mapping
                 Source = string.Empty, // TODO: Find mapping
                 OrganizationId = organizationId.GetValueOrDefault()
             };
+        }
+
+        public static Name MapName(NameDto input)
+        {
+            if (input == null)
+                return null;
+
+            Name name = new Name
+            {
+                Firstname = input.Firstname.StringOrEmpty(),
+                MiddleName = input.MiddleName.StringOrEmpty(),
+                LastName = input.LastName.StringOrEmpty(),
+                DisplayName = input.DisplayName.StringOrEmpty()
+            };
+            return name;
+        }
+
+        private static string StringOrEmpty(this string input)
+        {
+            return string.IsNullOrWhiteSpace(input) ? string.Empty : input.Trim();
+        }
+
+        public static LicenseInformation MapLicenseInformation(LicenseInformationDto input)
+        {
+            if (input == null)
+                return null;
+
+            var hasType = Enum.TryParse<LicenseInformation.Types.LicenseType>(input.Type, true, out var type);
+            if (hasType)
+                return new LicenseInformation
+                {
+                    LicenseNumber = input.Value.StringOrEmpty(),
+                    Type = type
+                };
+
+            return null;
         }
     }
 }

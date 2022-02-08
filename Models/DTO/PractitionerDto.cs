@@ -1,6 +1,7 @@
 ﻿using System;
 using CRISP.GRPC.ClinicalRelationship;
 using Google.Protobuf.Collections;
+using ProtoApp.Models.Mapping;
 
 namespace ProtoApp.Models.DTO
 {
@@ -8,16 +9,14 @@ namespace ProtoApp.Models.DTO
     {
         public long Id { get; set; }
         public DemographicsDto Demographics { get; set; }
-        public string Type { get; set; }
-        public long OrganizationId { get; set; }
+        public long? OrganizationId { get; set; }
         public NameDto Name { get; set; }
-
         public string MedicalSpeciality { get; set; }
         public LicenseInformationDto LicenseInformation { get; set; }
 
         public Practitioner ToGrpc()
         {
-            return new Practitioner();
+            return Mapper.MapPractitioner(this);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Context.Context;
@@ -32,14 +33,15 @@ namespace ProtoApp.GRPC
         /// <inheritdoc />
         public async Task<ClinicalRelationshipResponse> Handle(ClinicalRelationshipRequest clinicalRelationshipRequest)
         {
+            var eid = clinicalRelationshipRequest.PatientIdentifiers.Eid;
             //TODO: Break query into two separate ones and join at end from DTO.
             // FROM DTO: Automap to GRPC response.
-            var relationshipQuery = from patient in _context.Patients
+            var relationshipQuery =
+                from patient in _context.Patients
                 join relationship in _context.Relationships on patient.Id equals relationship.PatientId
                 join organization in _context.Organizations on relationship.Id equals organization.RelationshipId
                 join program in _context.OrganizationPrograms on organization.Id equals program.OrganizationId
-                // join practitioner in _context.Practitioners on relationship.Id equals practitioner.RelationshipId
-                where patient.Eid == "123456"
+                where patient.Eid == eid
                 select
                     new RelationshipDto
                     {
@@ -71,8 +73,12 @@ namespace ProtoApp.GRPC
                         }
                     };
 
-            var practitionerQuery = from practitioner in _context.Practitioners
-                join relationship in _context.Relationships on practitioner.RelationshipId equals relationship.Id
+            // For Now restrict this to 2 independent queries.
+            var practitionerQuery =
+                from patient in _context.Patients
+                join relationship in _context.Relationships on patient.Id equals relationship.PatientId
+                join practitioner in _context.Practitioners on relationship.Id equals practitioner.RelationshipId
+                where patient.Eid == eid
                 select new PractitionerDto
                 {
                     Id = practitioner.Id,
@@ -90,32 +96,86 @@ namespace ProtoApp.GRPC
                         AddressLine1 = practitioner.Demographic.AddressLine1,
                         AddressLine2 = practitioner.Demographic.AddressLine2
                     },
-                    Type = practitioner.MedicalSpeciality,
-                    OrganizationId = practitioner.OrganizationId.Value,
+                    MedicalSpeciality = practitioner.MedicalSpeciality,
+                    OrganizationId = practitioner.OrganizationId,
                     LicenseInformation = new LicenseInformationDto
                     {
                         Type = practitioner.LicenseType,
                         Value = practitioner.License
                     }
                 };
+
             // All relationships
             var relationshipResult = await relationshipQuery.ToListAsync();
-            // var practitionerResult = await practitionerQuery.ToListAsync();
+            _logger.LogInformation(":: Relationships Found {NumberOfRelationships}", relationshipResult.Count);
 
-            // Organizations
+            var practitionerResult = await practitionerQuery.ToListAsync();
+
+            var practitioners = MapPractitioner(practitionerResult);
+            _logger.LogInformation(":: Organizations Found {NumberOfPractitioners}", practitionerResult.Count);
+
+            var organizations = MapToOrganizations(relationshipResult);
+            _logger.LogInformation(":: Organizations Found {NumberOfOrganizations}", organizations.Count);
+
+            var programs = MapToPrograms(relationshipResult);
+            _logger.LogInformation(":: Programs Found {NumberOfPrograms}", programs.Count);
+
+            var mergedOrganizations = MergeOrganizationsAndPrograms(programs, organizations);
+
+            var response = new ClinicalRelationshipResponse
+            {
+                PatientRelationships = new PatientRelationship
+                {
+                    Organizations = {},
+                    Practitioners = {}
+                },
+                Error = null
+            };
+
+            if (mergedOrganizations.Any())
+                response.PatientRelationships.Organizations.Add(mergedOrganizations);
+
+            if (practitioners.Any())
+                response.PatientRelationships.Practitioners.Add(practitioners);
+
+            return response;
+        }
+
+        private static List<Practitioner> MapPractitioner(List<PractitionerDto> practitionerResult)
+        {
+            var practitioners = practitionerResult
+                ?.Where(x => x != null)
+                ?.Select(x => x.ToGrpc())
+                ?.ToList();
+
+            return practitioners;
+        }
+
+        // Organizations
+        private static List<Organization> MapToOrganizations(List<RelationshipDto> relationshipResult)
+        {
             var organizations = relationshipResult
                 ?.Where(x => x?.Organization != null)
                 ?.Select(x => x?.Organization?.ToGrpc())
                 ?.ToList();
+            return organizations;
+        }
 
+        // Programs
+        private static List<CRISP.GRPC.ClinicalRelationship.Program> MapToPrograms(List<RelationshipDto> relationshipResult)
+        {
             var programs = relationshipResult
                 ?.Where(x => x?.Program != null)
                 ?.Select(x => x?.Program?.ToGrpc())
                 ?.ToList();
+            return programs;
+        }
 
-            // Join Programs and Organizations
+        // Join Programs and Organizations
+        private static List<Organization> MergeOrganizationsAndPrograms(List<CRISP.GRPC.ClinicalRelationship.Program> programs, List<Organization> organizations)
+        {
             var mergedOrganizations =
-                from program in programs
+                (from program in programs
                 join organization in organizations on program?.OrganizationId equals organization?.Id
                 select
                     new Organization
@@ -127,18 +187,9 @@ namespace ProtoApp.GRPC
                         SubstanceUseDisclosure = organization.SubstanceUseDisclosure,
                         ContactInformation = organization.ContactInformation,
                         Address = organization.Address,
-                        Programs = { program }
-                    };
-
-            return new ClinicalRelationshipResponse
-            {
-                PatientRelationships = new PatientRelationship
-                {
-                    Organizations = {mergedOrganizations},
-                    Practitioners = {}
-                },
-                Error = null
-            };
+                        Programs = {program}
+                    })?.ToList();
+            return mergedOrganizations;
         }
     }
 }

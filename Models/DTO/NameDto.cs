@@ -8,5 +8,9 @@ namespace ProtoApp.Models.DTO
         public string LastName { get; set; }
         public string MiddleName { get; set; }
         public string DisplayName { get; set; }
+        public Name ToGrpc()
+        {
+            return Mapping.Mapper.MapName(this);
+        }
     }
 }
