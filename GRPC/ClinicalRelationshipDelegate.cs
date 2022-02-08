@@ -34,7 +34,7 @@ namespace ProtoApp.GRPC
         public async Task<ClinicalRelationshipResponse> Handle(ClinicalRelationshipRequest clinicalRelationshipRequest)
         {
             var eid = clinicalRelationshipRequest.PatientIdentifiers.Eid;
-            //TODO: Break query into two separate ones and join at end from DTO.
+
             // FROM DTO: Automap to GRPC response.
             var relationshipQuery =
                 from patient in _context.Patients
@@ -141,7 +141,7 @@ namespace ProtoApp.GRPC
             return response;
         }
 
-        private static List<Practitioner> MapPractitioner(List<PractitionerDto> practitionerResult)
+        private static List<CRISP.GRPC.ClinicalRelationship.Practitioner> MapPractitioner(List<PractitionerDto> practitionerResult)
         {
             var practitioners = practitionerResult
                 ?.Where(x => x != null)
@@ -152,7 +152,7 @@ namespace ProtoApp.GRPC
         }
 
         // Organizations
-        private static List<Organization> MapToOrganizations(List<RelationshipDto> relationshipResult)
+        private static List<CRISP.GRPC.ClinicalRelationship.Organization> MapToOrganizations(List<RelationshipDto> relationshipResult)
         {
             var organizations = relationshipResult
                 ?.Where(x => x?.Organization != null)
@@ -172,7 +172,7 @@ namespace ProtoApp.GRPC
         }
 
         // Join Programs and Organizations
-        private static List<Organization> MergeOrganizationsAndPrograms(List<CRISP.GRPC.ClinicalRelationship.Program> programs, List<Organization> organizations)
+        private static List<CRISP.GRPC.ClinicalRelationship.Organization> MergeOrganizationsAndPrograms(List<CRISP.GRPC.ClinicalRelationship.Program> programs, List<Organization> organizations)
         {
             var mergedOrganizations =
                 (from program in programs
@@ -188,7 +188,7 @@ namespace ProtoApp.GRPC
                         ContactInformation = organization.ContactInformation,
                         Address = organization.Address,
                         Programs = {program}
-                    })?.ToList();
+                    }).ToList();
             return mergedOrganizations;
         }
     }

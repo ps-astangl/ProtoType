@@ -13,7 +13,7 @@ namespace ProtoApp.Models.DTO
 
         public Organization ToGrpc()
         {
-            return Mapping.Mapper.MapOrganization(this);
+            return Mapping.Mapper.ToOrganization(this);
         }
     }
 }

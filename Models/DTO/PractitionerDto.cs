@@ -1,6 +1,4 @@
-﻿using System;
-using CRISP.GRPC.ClinicalRelationship;
-using Google.Protobuf.Collections;
+﻿using CRISP.GRPC.ClinicalRelationship;
 using ProtoApp.Models.Mapping;
 
 namespace ProtoApp.Models.DTO
@@ -16,7 +14,7 @@ namespace ProtoApp.Models.DTO
 
         public Practitioner ToGrpc()
         {
-            return Mapper.MapPractitioner(this);
+            return Mapper.ToPractitioner(this);
         }
     }
 }

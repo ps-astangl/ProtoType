@@ -9,9 +9,5 @@ namespace ProtoApp.Models.DTO
         public OrganizationDto Organization { get; set; }
         public PractitionerDto Practitioner { get; set; }
         public ProgramDto Program { get; set; }
-        public Relationship ToGrpc()
-        {
-            return new Relationship();
-        }
     }
 }

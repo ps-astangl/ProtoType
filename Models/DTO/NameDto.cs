@@ -10,7 +10,7 @@ namespace ProtoApp.Models.DTO
         public string DisplayName { get; set; }
         public Name ToGrpc()
         {
-            return Mapping.Mapper.MapName(this);
+            return Mapping.Mapper.ToName(this);
         }
     }
 }

@@ -1,37 +1,39 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using CRISP.GRPC.ClinicalRelationship;
-using Google.Protobuf.Collections;
 using ProtoApp.Models.DTO;
 
 namespace ProtoApp.Models.Mapping
 {
     public static class Mapper
     {
-        public static Practitioner MapPractitioner(PractitionerDto input)
+        public static CRISP.GRPC.ClinicalRelationship.Practitioner ToPractitioner(PractitionerDto input)
         {
             if (input == null)
                 return null;
 
-            var licenseInformation = MapLicenseInformation(input.LicenseInformation);
+            var licenseInformation = input.LicenseInformation.ToLicenseInformation();
+
             Practitioner practitioner = new Practitioner
             {
                 Id = input.Id,
                 Name = input.Name.ToGrpc(),
-                Address = input.Demographics.MapAddress(),
-                ContactInformation = input.Demographics.MapContactInformation(),
-                Type = Enum.TryParse<Practitioner.Types.ProviderType>(input.MedicalSpeciality, true, out var type) ?
-                    type : Practitioner.Types.ProviderType.None,
-                LicenseInformation = { }
+                Address = input.Demographics.ToAddress(),
+                ContactInformation = input.Demographics.ToContactInformation(),
+                Type = Enum.TryParse<Practitioner.Types.ProviderType>(input.MedicalSpeciality, true, out var type)
+                    ? type
+                    : Practitioner.Types.ProviderType.None,
+                LicenseInformation = { },
+                OrganizationIds = {  }
             };
             if (licenseInformation != null)
                 practitioner.LicenseInformation.Add(licenseInformation);
 
+            if (input.OrganizationId.HasValue)
+                practitioner.OrganizationIds.Add(input.OrganizationId.Value);
+
             return practitioner;
         }
-
-        public static Organization MapOrganization(OrganizationDto input)
+        public static CRISP.GRPC.ClinicalRelationship.Organization ToOrganization(OrganizationDto input)
         {
             if (input == null)
                 return null;
@@ -43,42 +45,42 @@ namespace ProtoApp.Models.Mapping
                 Source = input.Source.StringOrEmpty(),
                 DataSource = input.DataSource.StringOrEmpty(),
                 SubstanceUseDisclosure = input.SubstanceUseDisclosure.GetValueOrDefault(),
-                Address = input.Demographics?.MapAddress(),
-                ContactInformation = input?.Demographics?.MapContactInformation(),
+                Address = input.Demographics?.ToAddress(),
+                ContactInformation = input?.Demographics?.ToContactInformation(),
             };
             return organization;
         }
-
-        private static Address MapAddress(this DemographicsDto demographicsDto)
+        private static CRISP.GRPC.ClinicalRelationship.Address ToAddress(this DemographicsDto input)
         {
-            if (demographicsDto == null)
+            if (input == null)
                 return null;
 
             Address address = new Address
             {
-                City = demographicsDto.City.StringOrEmpty(),
-                State = demographicsDto.State.StringOrEmpty(),
-                Zip = demographicsDto.Zip.StringOrEmpty(),
-                AddressLine1 = demographicsDto.AddressLine1.StringOrEmpty(),
-                AddressLine2 = demographicsDto.AddressLine2.StringOrEmpty(),
+                City = input.City.StringOrEmpty(),
+                State = input.State.StringOrEmpty(),
+                Zip = input.Zip.StringOrEmpty(),
+                AddressLine1 = input.AddressLine1.StringOrEmpty(),
+                AddressLine2 = input.AddressLine2.StringOrEmpty(),
             };
             return address;
         }
-
-        private static ContactInformation MapContactInformation(this DemographicsDto demographicsDto)
+        private static CRISP.GRPC.ClinicalRelationship.ContactInformation ToContactInformation(this DemographicsDto input)
         {
-            if (string.IsNullOrWhiteSpace(demographicsDto.PhoneNumber))
+            if (string.IsNullOrWhiteSpace(input.PhoneNumber))
                 return null;
 
             return new ContactInformation
             {
-                Phonenumber = demographicsDto.PhoneNumber.StringOrEmpty(),
-                Type = Enum.TryParse<ContactInformation.Types.PhoneType>(demographicsDto.PhoneType, true, out var phoneType) ? phoneType : ContactInformation.Types.PhoneType.None,
-                Email = demographicsDto.Email.StringOrEmpty()
+                Phonenumber = input.PhoneNumber.StringOrEmpty(),
+                Type = Enum.TryParse<ContactInformation.Types.PhoneType>(input.PhoneType, true,
+                    out var phoneType)
+                    ? phoneType
+                    : ContactInformation.Types.PhoneType.None,
+                Email = input.Email.StringOrEmpty()
             };
         }
-
-        public static CRISP.GRPC.ClinicalRelationship.Program MapProgram(ProgramDto programDto, long? organizationId)
+        public static CRISP.GRPC.ClinicalRelationship.Program ToProgram(this ProgramDto programDto, long? organizationId)
         {
             if (programDto == null)
                 return null;
@@ -93,8 +95,7 @@ namespace ProtoApp.Models.Mapping
                 OrganizationId = organizationId.GetValueOrDefault()
             };
         }
-
-        public static Name MapName(NameDto input)
+        public static CRISP.GRPC.ClinicalRelationship.Name ToName(NameDto input)
         {
             if (input == null)
                 return null;
@@ -108,13 +109,7 @@ namespace ProtoApp.Models.Mapping
             };
             return name;
         }
-
-        private static string StringOrEmpty(this string input)
-        {
-            return string.IsNullOrWhiteSpace(input) ? string.Empty : input.Trim();
-        }
-
-        public static LicenseInformation MapLicenseInformation(LicenseInformationDto input)
+        private static CRISP.GRPC.ClinicalRelationship.LicenseInformation ToLicenseInformation(this LicenseInformationDto input)
         {
             if (input == null)
                 return null;
@@ -128,6 +123,10 @@ namespace ProtoApp.Models.Mapping
                 };
 
             return null;
+        }
+        private static string StringOrEmpty(this string input)
+        {
+            return string.IsNullOrWhiteSpace(input) ? string.Empty : input.Trim();
         }
     }
 }

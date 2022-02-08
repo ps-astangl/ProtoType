@@ -9,7 +9,7 @@
 
         public CRISP.GRPC.ClinicalRelationship.Program ToGrpc()
         {
-            return Mapping.Mapper.MapProgram(this, OrganizationId);
+            return Mapping.Mapper.ToProgram(this, OrganizationId);
         }
     }
 }
