@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using System.Linq;
 using System.Threading.Tasks;
 using Context.Context;
-using Context.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
+using Google.Protobuf.Collections;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ProtoApp.Models.DTO;
 using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
 using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
-using Program = CRISP.GRPC.ClinicalRelationship.Program;
 
 namespace ProtoApp.GRPC
 {
@@ -33,24 +32,26 @@ namespace ProtoApp.GRPC
         /// <inheritdoc />
         public async Task<ClinicalRelationshipResponse> Handle(ClinicalRelationshipRequest clinicalRelationshipRequest)
         {
+            //TODO: Break query into two separate ones and join at end from DTO.
+            // FROM DTO: Automap to GRPC response.
             var relationshipQuery = from patient in _context.Patients
                 join relationship in _context.Relationships on patient.Id equals relationship.PatientId
                 join organization in _context.Organizations on relationship.Id equals organization.RelationshipId
                 join program in _context.OrganizationPrograms on organization.Id equals program.OrganizationId
-                join practitioner in _context.Practitioners on relationship.Id equals practitioner.RelationshipId
-                where relationship.Id.Equals(3)
+                // join practitioner in _context.Practitioners on relationship.Id equals practitioner.RelationshipId
+                where patient.Eid == "123456"
                 select
-                    new RelationshipDTO
+                    new RelationshipDto
                     {
                         Id = relationship.Id,
-                        Organization = new OrganizationDTO
+                        Organization = new OrganizationDto
                         {
                             Id = organization.Id,
                             DataSource = relationship.DataSource,
                             Name = organization.ParticipantName,
                             Source = organization.ParticipantSourceCode,
                             SubstanceUseDisclosure = organization.SubstancesUseDisclosure,
-                            Demographics = new DemographicsDTO
+                            Demographics = new DemographicsDto
                             {
                                 PhoneNumber = organization.Demographic.PhoneNumber,
                                 Email = organization.Demographic.Email,
@@ -59,229 +60,85 @@ namespace ProtoApp.GRPC
                                 Zip = organization.Demographic.Zip,
                                 AddressLine1 = organization.Demographic.AddressLine1,
                                 AddressLine2 = organization.Demographic.AddressLine2
-                            },
+                            }
                         },
-                        Program = new ProgramDTO
+                        Program = new ProgramDto
                         {
                             Id = program.Id,
                             Name = program.Name,
                             Description = program.Description,
                             OrganizationId = program.OrganizationId
-                        },
-                        Practitioner = new PractitionerDTO
-                        {
-                            Id = practitioner.Id,
-                            Name = new NameDTO
-                            {
-                                Firstname = string.Empty,
-                                LastName = string.Empty,
-                                MiddleName = string.Empty,
-                                DisplayName = practitioner.DisplayName
-                            },
-                            Demographics = new DemographicsDTO
-                            {
-                                PhoneNumber = practitioner.Demographic.PhoneNumber,
-                                Email = practitioner.Demographic.Email,
-                                City = practitioner.Demographic.City,
-                                State = practitioner.Demographic.State,
-                                Zip = practitioner.Demographic.Zip,
-                                AddressLine1 = practitioner.Demographic.AddressLine1,
-                                AddressLine2 = practitioner.Demographic.AddressLine2
-                            },
-                            Type = practitioner.Type,
-                            OrganizationId = practitioner.OrganizationId
                         }
                     };
 
-
+            var practitionerQuery = from practitioner in _context.Practitioners
+                join relationship in _context.Relationships on practitioner.RelationshipId equals relationship.Id
+                select new PractitionerDto
+                {
+                    Id = practitioner.Id,
+                    Name = new NameDto
+                    {
+                        DisplayName = practitioner.DisplayName
+                    },
+                    Demographics = new DemographicsDto
+                    {
+                        PhoneNumber = practitioner.Demographic.PhoneNumber,
+                        Email = practitioner.Demographic.Email,
+                        City = practitioner.Demographic.City,
+                        State = practitioner.Demographic.State,
+                        Zip = practitioner.Demographic.Zip,
+                        AddressLine1 = practitioner.Demographic.AddressLine1,
+                        AddressLine2 = practitioner.Demographic.AddressLine2
+                    },
+                    Type = practitioner.MedicalSpeciality,
+                    OrganizationId = practitioner.OrganizationId.Value,
+                    LicenseInformation = new LicenseInformationDto
+                    {
+                        Type = practitioner.LicenseType,
+                        Value = practitioner.License
+                    }
+                };
             // All relationships
-            var relationships = await relationshipQuery.ToListAsync();
+            var relationshipResult = await relationshipQuery.ToListAsync();
+            // var practitionerResult = await practitionerQuery.ToListAsync();
 
             // Organizations
-            var organizations = relationships?.Select(x => x?.Organization?.ToGrpc() ?? new Organization())?.ToList();
+            var organizations = relationshipResult
+                ?.Where(x => x?.Organization != null)
+                ?.Select(x => x?.Organization?.ToGrpc())
+                ?.ToList();
 
-            // Practitioners
-            var practitioners = relationships?.Select(x => x?.Practitioner?.ToGrpc() ?? new Practitioner())?.ToList();
+            var programs = relationshipResult
+                ?.Where(x => x?.Program != null)
+                ?.Select(x => x?.Program?.ToGrpc())
+                ?.ToList();
 
-            // Programs
-            var programs = relationships
-                ?.Select(x => x?.Program?.ToGrpc() ?? new CRISP.GRPC.ClinicalRelationship.Program())?.ToList();
-
-            // Merge the organizations
+            // Join Programs and Organizations
             var mergedOrganizations =
                 from program in programs
                 join organization in organizations on program?.OrganizationId equals organization?.Id
                 select
                     new Organization
                     {
-                        Id = organization?.Id ?? string.Empty,
-                        DataSource = organization?.DataSource ?? String.Empty,
-                        Name = organization?.Name ?? String.Empty,
-                        Source = organization?.Source ?? String.Empty,
-                        SubstanceUseDisclosure = organization?.SubstanceUseDisclosure ?? false,
-                        ContactInformation = organization?.ContactInformation ?? new ContactInformation(),
-                        Address = organization?.Address ?? new Address(),
+                        Id = organization.Id,
+                        DataSource = organization.DataSource,
+                        Name = organization.Name,
+                        Source = organization.Source,
+                        SubstanceUseDisclosure = organization.SubstanceUseDisclosure,
+                        ContactInformation = organization.ContactInformation,
+                        Address = organization.Address,
                         Programs = { program }
                     };
+
             return new ClinicalRelationshipResponse
             {
                 PatientRelationships = new PatientRelationship
                 {
-                    Organizations = { mergedOrganizations?.ToList() ?? new List<Organization>() },
-                    Practitioners = { practitioners }
+                    Organizations = {mergedOrganizations},
+                    Practitioners = {}
                 },
                 Error = null
             };
         }
     }
-
-    #region DataTransferObjects
-
-    public class NameDTO
-    {
-        public string Firstname { get; set; }
-        public string LastName { get; set; }
-        public string MiddleName { get; set; }
-        public string DisplayName { get; set; }
-
-        public Name ToGrpc()
-        {
-            return new Name
-            {
-                Firstname = Firstname,
-                MiddleName = MiddleName,
-                LastName = LastName,
-                DisplayName = DisplayName
-            };
-        }
-    }
-
-
-    public class RelationshipDTO
-    {
-        public OrganizationDTO Organization { get; set; }
-        public PractitionerDTO Practitioner { get; set; }
-        public ProgramDTO Program { get; set; }
-        public long Id { get; set; }
-
-        public Relationship ToGrpc()
-        {
-            return new Relationship
-            {
-                Id = Id,
-                PatientId = null,
-                DataSource = null,
-                DateAdded = default,
-                DateUpdated = default,
-                Patient = null,
-                Organizations = null,
-                Practitioners = null
-            };
-        }
-    }
-
-    public class ProgramDTO
-    {
-        public long Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public long? OrganizationId { get; set; }
-
-        public CRISP.GRPC.ClinicalRelationship.Program ToGrpc()
-        {
-            return new CRISP.GRPC.ClinicalRelationship.Program
-            {
-                Id = Id.ToString() ?? string.Empty,
-                Name = Name,
-                Description = Description,
-                OrganizationId = OrganizationId?.ToString() ?? string.Empty
-            };
-        }
-    }
-
-    public class PractitionerDTO
-    {
-        public long Id { get; set; }
-        public DemographicsDTO Demographics { get; set; }
-        public string Type { get; set; }
-        public long? OrganizationId { get; set; }
-        public NameDTO Name { get; set; }
-
-        public Practitioner ToGrpc()
-        {
-            return new Practitioner
-            {
-                Id = Id.ToString() ?? string.Empty,
-                Name = Name.ToGrpc(),
-                Address = Demographics.ToAddressGrpc(),
-                ContactInformation = Demographics.ToContactInformationGrpc(),
-                Type = Enum.TryParse<Practitioner.Types.ProviderType>(Type, out var type)
-                    ? type
-                    : Practitioner.Types.ProviderType.None
-            };
-        }
-    }
-
-    public class OrganizationDTO
-    {
-        public long Id { get; set; }
-        public string DataSource { get; set; }
-        public string Name { get; set; }
-        public string Source { get; set; }
-        public bool? SubstanceUseDisclosure { get; set; }
-        public DemographicsDTO Demographics { get; set; }
-
-        public Organization ToGrpc()
-        {
-            return new Organization
-            {
-                Id = Id.ToString(),
-                DataSource = DataSource ?? string.Empty,
-                Name = Name ?? string.Empty,
-                Source = Source ?? string.Empty,
-                SubstanceUseDisclosure = SubstanceUseDisclosure ?? false,
-                ContactInformation = Demographics?.ToContactInformationGrpc() ?? new ContactInformation(),
-                Address = Demographics?.ToAddressGrpc() ?? new Address()
-            };
-        }
-    }
-
-    public class DemographicsDTO
-    {
-        public string PhoneNumber { get; set; }
-        public string PhoneType { get; set; }
-        public string Email { get; set; }
-        public string City { get; set; }
-        public string State { get; set; }
-        public string Zip { get; set; }
-        public string AddressLine1 { get; set; }
-        public string AddressLine2 { get; set; }
-
-        public Address ToAddressGrpc()
-        {
-            return new Address
-            {
-                City = City ?? string.Empty,
-                State = State ?? string.Empty,
-                Zip = Zip ?? string.Empty,
-                AddressLine1 = AddressLine1 ?? string.Empty,
-                AddressLine2 = AddressLine2 ?? string.Empty
-            };
-        }
-
-        public ContactInformation ToContactInformationGrpc()
-        {
-            return new ContactInformation
-            {
-                Phone = new PhoneNumber
-                {
-                    Number = PhoneNumber ?? string.Empty,
-                    Type = CRISP.GRPC.ClinicalRelationship.PhoneNumber.Types.PhoneType.None
-                },
-                Email = Email ?? string.Empty
-            };
-        }
-    }
-
-    #endregion
 }
