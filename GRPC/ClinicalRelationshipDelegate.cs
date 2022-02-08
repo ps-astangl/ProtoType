@@ -4,12 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Context.Context;
 using CRISP.GRPC.ClinicalRelationship;
-using Google.Protobuf.Collections;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProtoApp.Models.DTO;
-using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
-using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
 
 namespace ProtoApp.GRPC
 {
@@ -23,8 +20,9 @@ namespace ProtoApp.GRPC
         private readonly ILogger<ClinicalRelationshipDelegate> _logger;
         private readonly PatientRelationshipContext _context;
 
-        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger,
-            PatientRelationshipContext context)
+        // TODO: Move into repository layer for queries.
+        // TODO: Move map and merge operations behind interface
+        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger, PatientRelationshipContext context)
         {
             _logger = logger;
             _context = context;
@@ -142,7 +140,7 @@ namespace ProtoApp.GRPC
         }
 
         // Practitioner
-        private static List<CRISP.GRPC.ClinicalRelationship.Practitioner> MapPractitioner(List<PractitionerDto> practitionerResult)
+        private static List<Practitioner> MapPractitioner(List<PractitionerDto> practitionerResult)
         {
             var practitioners = practitionerResult
                 ?.Where(x => x != null)
@@ -153,7 +151,7 @@ namespace ProtoApp.GRPC
         }
 
         // Organizations
-        private static List<CRISP.GRPC.ClinicalRelationship.Organization> MapToOrganizations(List<RelationshipDto> relationshipResult)
+        private static List<Organization> MapToOrganizations(List<RelationshipDto> relationshipResult)
         {
             var organizations = relationshipResult
                 ?.Where(x => x?.Organization != null)
@@ -173,7 +171,7 @@ namespace ProtoApp.GRPC
         }
 
         // Join Programs and Organizations
-        private static List<CRISP.GRPC.ClinicalRelationship.Organization> MergeOrganizationsAndPrograms(List<CRISP.GRPC.ClinicalRelationship.Program> programs, List<Organization> organizations)
+        private static List<Organization> MergeOrganizationsAndPrograms(List<CRISP.GRPC.ClinicalRelationship.Program> programs, List<Organization> organizations)
         {
             var mergedOrganizations =
                 (from program in programs
