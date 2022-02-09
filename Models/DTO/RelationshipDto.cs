@@ -1,6 +1,7 @@
 ﻿using Context.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
 using ProtoApp.GRPC;
+using ProtoApp.Models.Mapping;
 
 namespace ProtoApp.Models.DTO
 {
@@ -13,5 +14,10 @@ namespace ProtoApp.Models.DTO
         public string DataSource { get; set; }
         public string Source { get; set; }
         public string Mrn { get; set; }
+
+        public PatientRelationship ToGrpc()
+        {
+            return Mapper.ToPatientRelationship(this);
+        }
     }
 }

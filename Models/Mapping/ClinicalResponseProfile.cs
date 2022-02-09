@@ -15,6 +15,7 @@ namespace ProtoApp.Models.Mapping
             Practitioner practitioner = new Practitioner
             {
                 Id = input.Id,
+                PatientRelationshipId = input.RelationshipId,
                 Name = input.Name.ToGrpc(),
                 Address = input.Demographics.ToAddress(),
                 ContactInformation = input.Demographics.ToContactInformation(),
@@ -48,6 +49,7 @@ namespace ProtoApp.Models.Mapping
                 SubstanceUseDisclosure = input.SubstanceUseDisclosure.GetValueOrDefault(),
                 Address = input.Demographics?.ToAddress(),
                 ContactInformation = input?.Demographics?.ToContactInformation(),
+                PatientRelationshipId = input.RelationshipId
             };
             return organization;
         }
@@ -73,7 +75,7 @@ namespace ProtoApp.Models.Mapping
 
             return new ContactInformation
             {
-                Phonenumber = input.PhoneNumber.StringOrEmpty(),
+                PhoneNumber = input.PhoneNumber.StringOrEmpty(),
                 PhoneType = Enum.TryParse<ContactInformation.Types.PhoneType>(input.PhoneType, true,
                     out var phoneType)
                     ? phoneType
@@ -128,6 +130,14 @@ namespace ProtoApp.Models.Mapping
         private static string StringOrEmpty(this string input)
         {
             return string.IsNullOrWhiteSpace(input) ? string.Empty : input.Trim();
+        }
+        public static PatientRelationship ToPatientRelationship(RelationshipDto relationshipDto)
+        {
+            PatientRelationship patientRelationship = new PatientRelationship();
+
+            if (relationshipDto == null)
+                return null;
+            return patientRelationship;
         }
     }
 }

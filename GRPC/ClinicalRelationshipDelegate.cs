@@ -7,6 +7,8 @@ using CRISP.GRPC.ClinicalRelationship;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProtoApp.Models.DTO;
+using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
+using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
 
 namespace ProtoApp.GRPC
 {
@@ -50,6 +52,7 @@ namespace ProtoApp.GRPC
                         Organization = new OrganizationDto
                         {
                             Id = organization.Id,
+                            RelationshipId = relationship.Id,
                             DataSource = relationship.DataSource,
                             Name = organization.ParticipantName,
                             Source = organization.ParticipantSourceCode,
@@ -83,6 +86,7 @@ namespace ProtoApp.GRPC
                 select new PractitionerDto
                 {
                     Id = practitioner.Id,
+                    RelationshipId = relationship.Id,
                     Name = new NameDto
                     {
                         DisplayName = practitioner.DisplayName
@@ -108,8 +112,12 @@ namespace ProtoApp.GRPC
 
             // All relationships
             var relationshipResult = await relationshipQuery.ToListAsync();
+
+            // Do we need the data specific to the Source and MRN for the Relationship level information
+            var mapped = MapToRelationship(relationshipResult);
             _logger.LogInformation(":: Relationships Found {NumberOfRelationships}", relationshipResult.Count);
 
+            // Relationship result
             var practitionerResult = await practitionerQuery.ToListAsync();
 
             var practitioners = MapPractitioner(practitionerResult);
@@ -123,25 +131,15 @@ namespace ProtoApp.GRPC
 
             var mergedOrganizations = MergeOrganizationsAndPrograms(programs, organizations);
 
-            var response = new ClinicalRelationshipResponse
+            return new ClinicalRelationshipResponse
             {
                 PatientRelationships = new PatientRelationship
                 {
-                    DataSource = null,
-                    Smrn = null,
-                    Practitioners = {  },
-                    Organizations = {  }
+                    Organizations = { mergedOrganizations },
+                    Practitioners = { practitioners }
                 },
                 Error = null
             };
-
-            if (mergedOrganizations.Any())
-                response.PatientRelationships.Organizations.Add(mergedOrganizations);
-
-            if (practitioners.Any())
-                response.PatientRelationships.Practitioners.Add(practitioners);
-
-            return response;
         }
 
         // Practitioner
@@ -153,6 +151,15 @@ namespace ProtoApp.GRPC
                 ?.ToList();
 
             return practitioners;
+        }
+
+        // Primary Relationships
+        private static List<PatientRelationship> MapToRelationship(List<RelationshipDto> relationship)
+        {
+            return relationship
+                ?.Where(x => x != null)
+                ?.Select(x => x.ToGrpc())
+                .ToList();
         }
 
         // Organizations

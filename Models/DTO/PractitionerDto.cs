@@ -11,6 +11,7 @@ namespace ProtoApp.Models.DTO
         public NameDto Name { get; set; }
         public string MedicalSpeciality { get; set; }
         public LicenseInformationDto LicenseInformation { get; set; }
+        public long RelationshipId { get; set; }
 
         public Practitioner ToGrpc()
         {
