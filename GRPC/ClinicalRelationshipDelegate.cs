@@ -40,7 +40,7 @@ namespace ProtoApp.GRPC
                 from patient in _context.Patients
                 join relationship in _context.Relationships on patient.Id equals relationship.PatientId
                 join organization in _context.Organizations on relationship.Id equals organization.RelationshipId
-                join program in _context.OrganizationPrograms on organization.Id equals program.OrganizationId
+                // join program in _context.OrganizationPrograms on organization.Id equals program.OrganizationId
                 where patient.Eid == eid
                 select
                     new RelationshipDto
@@ -55,10 +55,11 @@ namespace ProtoApp.GRPC
                             RelationshipId = relationship.Id,
                             DataSource = relationship.DataSource,
                             Name = organization.ParticipantName,
-                            Source = organization.ParticipantSourceCode,
+                            Source = organization.AssigningAuthorityCode,
                             SubstanceUseDisclosure = organization.SubstancesUseDisclosure,
                             Demographics = new DemographicsDto
                             {
+                                Id = organization.Demographic.Id,
                                 PhoneNumber = organization.Demographic.PhoneNumber,
                                 Email = organization.Demographic.Email,
                                 City = organization.Demographic.City,
@@ -68,15 +69,16 @@ namespace ProtoApp.GRPC
                                 AddressLine2 = organization.Demographic.AddressLine2
                             }
                         },
-                        Program = new ProgramDto
-                        {
-                            Id = program.Id,
-                            Name = program.Name,
-                            Description = program.Description,
-                            OrganizationId = program.OrganizationId
-                        }
+                        // Program = new ProgramDto
+                        // {
+                        //     Id = program.Id,
+                        //     Name = program.Name,
+                        //     Description = program.Description,
+                        //     OrganizationId = program.OrganizationId
+                        // }
                     };
 
+            /*
             // For Now restrict this to 2 independent queries.
             var practitionerQuery =
                 from patient in _context.Patients
@@ -109,6 +111,7 @@ namespace ProtoApp.GRPC
                         Value = practitioner.License
                     }
                 };
+                */
 
             // All relationships
             var relationshipResult = await relationshipQuery.ToListAsync();
@@ -118,10 +121,10 @@ namespace ProtoApp.GRPC
             _logger.LogInformation(":: Relationships Found {NumberOfRelationships}", relationshipResult.Count);
 
             // Relationship result
-            var practitionerResult = await practitionerQuery.ToListAsync();
+            // var practitionerResult = await practitionerQuery.ToListAsync();
 
-            var practitioners = MapPractitioner(practitionerResult);
-            _logger.LogInformation(":: Organizations Found {NumberOfPractitioners}", practitionerResult.Count);
+            // var practitioners = MapPractitioner(practitionerResult);
+            // _logger.LogInformation(":: Organizations Found {NumberOfPractitioners}", practitionerResult.Count);
 
             var organizations = MapToOrganizations(relationshipResult);
             _logger.LogInformation(":: Organizations Found {NumberOfOrganizations}", organizations.Count);
@@ -135,8 +138,8 @@ namespace ProtoApp.GRPC
             {
                 PatientRelationships = new PatientRelationship
                 {
-                    Organizations = { mergedOrganizations },
-                    Practitioners = { practitioners }
+                    Organizations = { organizations },
+                    Practitioners = { }
                 },
                 Error = null
             };
@@ -198,7 +201,7 @@ namespace ProtoApp.GRPC
                         SubstanceUseDisclosure = organization.SubstanceUseDisclosure,
                         ContactInformation = organization.ContactInformation,
                         Address = organization.Address,
-                        Programs = {program}
+                        Programs = { program }
                     }).ToList();
             return mergedOrganizations;
         }

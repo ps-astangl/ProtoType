@@ -48,7 +48,7 @@ namespace ProtoApp.Models.Mapping
                 DataSource = input.DataSource.StringOrEmpty(),
                 SubstanceUseDisclosure = input.SubstanceUseDisclosure.GetValueOrDefault(),
                 Address = input.Demographics?.ToAddress(),
-                ContactInformation = input?.Demographics?.ToContactInformation(),
+                ContactInformation = input.Demographics?.ToContactInformation(),
                 PatientRelationshipId = input.RelationshipId
             };
             return organization;
@@ -56,6 +56,8 @@ namespace ProtoApp.Models.Mapping
         private static CRISP.GRPC.ClinicalRelationship.Address ToAddress(this DemographicsDto input)
         {
             if (input == null)
+                return null;
+            if (input.Id == null)
                 return null;
 
             Address address = new Address

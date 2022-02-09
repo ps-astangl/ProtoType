@@ -14,5 +14,6 @@ namespace ProtoApp.Models.DTO
         public string Zip { get; set; } = string.Empty;
         public string AddressLine1 { get; set; } = string.Empty;
         public string AddressLine2 { get; set; } = string.Empty;
+        public long? Id { get; set; }
     }
 }

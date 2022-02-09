@@ -9,7 +9,7 @@ namespace ProtoApp.Models.DTO
         public string Name { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
         public bool? SubstanceUseDisclosure { get; set; } = false;
-        public DemographicsDto Demographics { get; set; } = new DemographicsDto();
+        public DemographicsDto Demographics { get; set; }
         public long RelationshipId { get; set; }
 
         public Organization ToGrpc()
