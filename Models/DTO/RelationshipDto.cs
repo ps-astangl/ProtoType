@@ -1,4 +1,5 @@
 ﻿using Context.Context.Models;
+using CRISP.GRPC.ClinicalRelationship;
 using ProtoApp.GRPC;
 
 namespace ProtoApp.Models.DTO
@@ -9,5 +10,8 @@ namespace ProtoApp.Models.DTO
         public OrganizationDto Organization { get; set; }
         public PractitionerDto Practitioner { get; set; }
         public ProgramDto Program { get; set; }
+        public string DataSource { get; set; }
+        public string Source { get; set; }
+        public string Mrn { get; set; }
     }
 }

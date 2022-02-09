@@ -12,19 +12,20 @@ namespace ProtoApp.Models.Mapping
                 return null;
 
             var licenseInformation = input.LicenseInformation.ToLicenseInformation();
-
             Practitioner practitioner = new Practitioner
             {
                 Id = input.Id,
                 Name = input.Name.ToGrpc(),
                 Address = input.Demographics.ToAddress(),
                 ContactInformation = input.Demographics.ToContactInformation(),
-                Type = Enum.TryParse<Practitioner.Types.ProviderType>(input.MedicalSpeciality, true, out var type)
-                    ? type
-                    : Practitioner.Types.ProviderType.None,
                 LicenseInformation = { },
-                OrganizationIds = {  }
+                OrganizationIds = { },
+                ProviderType = Enum.TryParse<Practitioner.Types.ProviderType>(input.MedicalSpeciality, true,
+                    out var providerType)
+                    ? providerType
+                    : Practitioner.Types.ProviderType.Unknown,
             };
+
             if (licenseInformation != null)
                 practitioner.LicenseInformation.Add(licenseInformation);
 
@@ -73,7 +74,7 @@ namespace ProtoApp.Models.Mapping
             return new ContactInformation
             {
                 Phonenumber = input.PhoneNumber.StringOrEmpty(),
-                Type = Enum.TryParse<ContactInformation.Types.PhoneType>(input.PhoneType, true,
+                PhoneType = Enum.TryParse<ContactInformation.Types.PhoneType>(input.PhoneType, true,
                     out var phoneType)
                     ? phoneType
                     : ContactInformation.Types.PhoneType.None,
@@ -102,7 +103,7 @@ namespace ProtoApp.Models.Mapping
 
             Name name = new Name
             {
-                Firstname = input.Firstname.StringOrEmpty(),
+                FirstName = input.Firstname.StringOrEmpty(),
                 MiddleName = input.MiddleName.StringOrEmpty(),
                 LastName = input.LastName.StringOrEmpty(),
                 DisplayName = input.DisplayName.StringOrEmpty()
@@ -114,12 +115,12 @@ namespace ProtoApp.Models.Mapping
             if (input == null)
                 return null;
 
-            var hasType = Enum.TryParse<LicenseInformation.Types.LicenseType>(input.Type, true, out var type);
+            var hasType = Enum.TryParse<LicenseInformation.Types.LicenseType>(input.Type, true, out var licenseType);
             if (hasType)
                 return new LicenseInformation
                 {
                     LicenseNumber = input.Value.StringOrEmpty(),
-                    Type = type
+                    LicenseType = licenseType
                 };
 
             return null;

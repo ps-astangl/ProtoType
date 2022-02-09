@@ -44,6 +44,9 @@ namespace ProtoApp.GRPC
                     new RelationshipDto
                     {
                         Id = relationship.Id,
+                        DataSource = relationship.DataSource,
+                        Source = patient.Source,
+                        Mrn = patient.Mrn,
                         Organization = new OrganizationDto
                         {
                             Id = organization.Id,
@@ -124,8 +127,10 @@ namespace ProtoApp.GRPC
             {
                 PatientRelationships = new PatientRelationship
                 {
-                    Organizations = {},
-                    Practitioners = {}
+                    DataSource = null,
+                    Smrn = null,
+                    Practitioners = {  },
+                    Organizations = {  }
                 },
                 Error = null
             };
