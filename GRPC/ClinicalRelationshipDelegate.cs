@@ -23,8 +23,7 @@ namespace ProtoApp.GRPC
 
         // TODO: Move into repository layer for queries.
         // TODO: Move map and merge operations behind interface
-        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger,
-            PatientRelationshipContext context)
+        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger, PatientRelationshipContext context)
         {
             _logger = logger;
             _context = context;
@@ -136,14 +135,14 @@ namespace ProtoApp.GRPC
             _logger.LogInformation(":: Organizations Found {NumberOfOrganizations}", organizations.Count);
 
             var programResult = await programQuery.ToListAsync();
-            var programs = MapToPrograms(programResult);
+            var programs = MapProgram(programResult);
             _logger.LogInformation(":: Programs Found {NumberOfPrograms}", programs.Count);
 
             var mergedOrganizations = InnerJoinPrograms(programs, organizations);
 
             var practitionerResult = await practitionerQuery.ToListAsync();
             var practitioners = MapPractitioner(practitionerResult);
-            _logger.LogInformation(":: Programs Found {NumberOfpractitioners}", practitioners.Count);
+            _logger.LogInformation(":: Practitioners Found {NumberOfPractitioners}", practitioners.Count);
 
             return new ClinicalRelationshipResponse
             {
@@ -167,7 +166,7 @@ namespace ProtoApp.GRPC
             return practitioners;
         }
 
-        // Practitioner
+        // Programs
         private static List<CRISP.GRPC.ClinicalRelationship.Program> MapProgram(List<ProgramDto> programDtos)
         {
             var programs = programDtos
@@ -178,15 +177,6 @@ namespace ProtoApp.GRPC
             return programs;
         }
 
-        // Primary Relationships
-        private static List<PatientRelationship> MapToRelationship(List<RelationshipDto> relationship)
-        {
-            return relationship
-                ?.Where(x => x != null)
-                ?.Select(x => x.ToGrpc())
-                .ToList();
-        }
-
         // Organizations
         private static List<Organization> MapToOrganizations(List<RelationshipDto> relationshipResult)
         {
@@ -195,17 +185,6 @@ namespace ProtoApp.GRPC
                 ?.Select(x => x?.Organization?.ToGrpc())
                 ?.ToList();
             return organizations;
-        }
-
-        // Programs
-        private static List<CRISP.GRPC.ClinicalRelationship.Program> MapToPrograms(List<ProgramDto> programResult)
-        {
-            var programs = programResult
-                ?.Where(x => x != null)
-                ?.Select(x => x?.ToGrpc())
-                ?.ToList();
-
-            return programs;
         }
 
         // Join Programs and Organizations
