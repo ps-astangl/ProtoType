@@ -5,7 +5,7 @@ using CRISP.GRPC.ClinicalRelationship;
 using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
 using Practitioner = Context.Context.Models.Practitioner;
 
-namespace ProtoApp.Models.Mapping
+namespace ProtoApp.Mapping
 {
     public static class ProtoMap
     {

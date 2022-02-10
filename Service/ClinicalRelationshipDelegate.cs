@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Context.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
 using Microsoft.Extensions.Logging;
-using ProtoApp.Models.Mapping;
+using ProtoApp.Mapping;
 using ProtoApp.Repository;
 using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
 using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
@@ -21,8 +22,6 @@ namespace ProtoApp.GRPC
         private readonly ILogger<ClinicalRelationshipDelegate> _logger;
         private readonly IRelationshipRepository _relationshipRepository;
 
-        // TODO: Move into repository layer for queries.
-        // TODO: Move map and merge operations behind interface
         public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger, IRelationshipRepository relationshipRepository)
         {
             _logger = logger;
@@ -32,15 +31,31 @@ namespace ProtoApp.GRPC
         /// <inheritdoc />
         public async Task<ClinicalRelationshipResponse> Handle(ClinicalRelationshipRequest clinicalRelationshipRequest)
         {
-            var relationships = await _relationshipRepository.GetRelationshipsByEid(clinicalRelationshipRequest.PatientIdentifiers.Eid);
             var response = InitializeResponse();
+            List<Relationship> relationships = null;
+            try
+            {
+                relationships = await _relationshipRepository.GetRelationshipsByEid(
+                    clinicalRelationshipRequest.PatientIdentifiers.Eid,
+                    clinicalRelationshipRequest.PatientIdentifiers.DataSource);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, ":: An exception has occured during execution of query");
+                response.Error = new Error
+                {
+                    ErrorReason = exception.Message
+                };
+            }
+
+            
             if (relationships?.Count == 0 || relationships == null)
                 return response;
 
             // Loop through each result and collect the information for the repeated response elements.
             foreach (var relationship in relationships)
             {
-                var orgs = ExtractOrganizations(relationship.Organizations);
+                var orgs =     ExtractOrganizations(relationship.Organizations);
                 var providers = ExtractProviders(relationship.Practitioners);
 
                 if (orgs?.Count != 0)

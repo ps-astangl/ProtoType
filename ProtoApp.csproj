@@ -4,7 +4,9 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="..\..\..\repos\crisp\CRISP-GRPC\src\CRISP.GRPC.ClinicalRelationships\CRISP.GRPC.ClinicalRelationships.csproj" />
-      <ProjectReference Include="..\Context\Context.csproj" />
+        <PackageReference Include="CRISP.GRPC.ClinicalRelationships" Version="1.0.4" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Context\Context.csproj" />
     </ItemGroup>
 </Project>
