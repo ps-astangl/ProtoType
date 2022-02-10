@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ProtoApp.GRPC;
+using ProtoApp.Repository;
 
 namespace ProtoApp
 {
@@ -23,6 +24,7 @@ namespace ProtoApp
         {
             services.AddDbContextPool<PatientRelationshipContext>(options =>
                 options.UseSqlServer(Configuration["ConnectionStrings:Context"]));
+            services.AddTransient<IRelationshipRepository, RelationshipRepository>();
             services.AddScoped<IClinicalRelationshipDelegate, ClinicalRelationshipDelegate>();
             services.AddGrpc();
         }

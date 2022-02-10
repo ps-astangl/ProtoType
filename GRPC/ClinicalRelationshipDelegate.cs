@@ -1,13 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Context.Context;
 using CRISP.GRPC.ClinicalRelationship;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using ProtoApp.Models.DTO;
-using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
-using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
+using ProtoApp.Models.Mapping;
+using ProtoApp.Repository;
 
 namespace ProtoApp.GRPC
 {
@@ -19,19 +16,25 @@ namespace ProtoApp.GRPC
     public class ClinicalRelationshipDelegate : IClinicalRelationshipDelegate
     {
         private readonly ILogger<ClinicalRelationshipDelegate> _logger;
-        private readonly PatientRelationshipContext _context;
+        private readonly IRelationshipRepository _relationshipRepository;
 
         // TODO: Move into repository layer for queries.
         // TODO: Move map and merge operations behind interface
-        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger, PatientRelationshipContext context)
+        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger, IRelationshipRepository relationshipRepository)
         {
             _logger = logger;
-            _context = context;
+            _relationshipRepository = relationshipRepository;
         }
 
         /// <inheritdoc />
         public async Task<ClinicalRelationshipResponse> Handle(ClinicalRelationshipRequest clinicalRelationshipRequest)
         {
+            /*
+            _context.Patients
+                .Include(x => x.Relationships)
+                .ThenInclude(x => x.Organizations)
+                .ThenInclude(x => x.Practitioners);
+
             /* Ideal query for Obtaining Relationship-> Organization -> Program
              SELECT *
             FROM [Patient] AS [p]
@@ -40,7 +43,6 @@ namespace ProtoApp.GRPC
             LEFT JOIN [OrganizationProgram] AS [o0] ON [o].[Id] = [o0].[OrganizationId]
             LEFT JOIN [Demographic] AS [d] ON [o].[DemographicId] = [d].[Id]
             WHERE [p].[Eid] = 157883854
-             */
             var eid = clinicalRelationshipRequest.PatientIdentifiers.Eid;
 
             // FROM DTO: Automap to GRPC response.
@@ -48,7 +50,8 @@ namespace ProtoApp.GRPC
                 from patient in _context.Patients
                 where patient.Eid == eid
                 join relationship in _context.Relationships on patient.Id equals relationship.PatientId
-                join organization in _context.Organizations on relationship.Id equals organization.RelationshipId
+                join organization in _context.Organizations on relationship.Id equals organization
+                    .RelationshipId
                 select
                     new RelationshipDto
                     {
@@ -98,7 +101,8 @@ namespace ProtoApp.GRPC
             var practitionerQuery =
                 from patient in _context.Patients
                 join relationship in _context.Relationships on patient.Id equals relationship.PatientId
-                join practitioner in _context.Practitioners on relationship.Id equals practitioner.RelationshipId
+                join practitioner in _context.Practitioners on relationship.Id equals practitioner
+                    .RelationshipId
                 where patient.Eid == eid
                 select new PractitionerDto
                 {
@@ -130,7 +134,6 @@ namespace ProtoApp.GRPC
             // Do we need the data specific to the Source and MRN for the Relationship level information
             _logger.LogInformation(":: Relationships Found {NumberOfRelationships}", relationshipResult.Count);
 
-
             var organizations = MapToOrganizations(relationshipResult);
             _logger.LogInformation(":: Organizations Found {NumberOfOrganizations}", organizations.Count);
 
@@ -144,72 +147,37 @@ namespace ProtoApp.GRPC
             var practitioners = MapPractitioner(practitionerResult);
             _logger.LogInformation(":: Practitioners Found {NumberOfPractitioners}", practitioners.Count);
 
-            return new ClinicalRelationshipResponse
+            */
+            var relationships = await _relationshipRepository.GetRelationshipsByEid(clinicalRelationshipRequest.PatientIdentifiers.Eid);
+            var response = new ClinicalRelationshipResponse
             {
                 PatientRelationships = new PatientRelationship
                 {
-                    Organizations = {mergedOrganizations},
-                    Practitioners = {practitioners}
+                    Organizations = {},
+                    Practitioners = {}
                 },
                 Error = null
             };
-        }
 
-        // Practitioner
-        private static List<Practitioner> MapPractitioner(List<PractitionerDto> practitionerResult)
-        {
-            var practitioners = practitionerResult
-                ?.Where(x => x != null)
-                ?.Select(x => x.ToGrpc())
-                ?.ToList();
+            // Loop through each result and collect the information for the repeated response elements.
+            foreach (var relationship in relationships)
+            {
+                var orgs = relationship.Organizations
+                    ?.Where(x => x != null)
+                    ?.Select(x => x.ToGrpcOrganization())
+                    ?.ToList();
 
-            return practitioners;
-        }
+                var providers = relationship.Practitioners
+                    ?.Where(x => x != null)
+                    ?.Select(x => x.ToGrpcPractitioner())
+                    ?.ToList();
 
-        // Programs
-        private static List<CRISP.GRPC.ClinicalRelationship.Program> MapProgram(List<ProgramDto> programDtos)
-        {
-            var programs = programDtos
-                ?.Where(x => x != null)
-                ?.Select(x => x.ToGrpc())
-                ?.ToList();
-
-            return programs;
-        }
-
-        // Organizations
-        private static List<Organization> MapToOrganizations(List<RelationshipDto> relationshipResult)
-        {
-            var organizations = relationshipResult
-                ?.Where(x => x?.Organization != null)
-                ?.Select(x => x?.Organization?.ToGrpc())
-                ?.ToList();
-            return organizations;
-        }
-
-        // Join Programs and Organizations
-        private static List<Organization> InnerJoinPrograms(List<CRISP.GRPC.ClinicalRelationship.Program> programs,
-            List<Organization> organizations)
-        {
-            if (programs.Count == 0)
-                return organizations;
-
-            var query =
-                from organization in organizations
-                join program in programs on organization.Id equals program.OrganizationId
-                    into gj
-                select new Organization
-                {
-                    Id = organization.Id,
-                    DataSource = organization.DataSource,
-                    Name = organization.Name,
-                    Source = organization.Source,
-                    SubstanceUseDisclosure = organization.SubstanceUseDisclosure,
-                    ContactInformation = organization.ContactInformation,
-                    Address = organization.Address,
-                    Programs = {gj}
-                };
-            return query.ToList();
+                if (orgs?.Count != 0)
+                    response.PatientRelationships.Organizations.Add(orgs);
+                if (providers?.Count != 0)
+                    response.PatientRelationships.Practitioners.Add(providers);
+            };
+            return response;
         }
     }
 }

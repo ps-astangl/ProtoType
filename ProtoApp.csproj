@@ -7,4 +7,7 @@
       <ProjectReference Include="..\..\..\repos\crisp\CRISP-GRPC\src\CRISP.GRPC.ClinicalRelationships\CRISP.GRPC.ClinicalRelationships.csproj" />
       <ProjectReference Include="..\Context\Context.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Models\DTO" />
+    </ItemGroup>
 </Project>
