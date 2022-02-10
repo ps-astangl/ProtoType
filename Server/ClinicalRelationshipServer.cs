@@ -9,18 +9,18 @@ namespace ProtoApp.Server
     public class ClinicalRelationshipServer : ClinicalRelationshipService.ClinicalRelationshipServiceBase
     {
         private readonly ILogger<ClinicalRelationshipServer> _logger;
-        private readonly IClinicalRelationshipDelegate _serviceDelegate;
+        private readonly IClinicalRelationshipHandler _serviceHandler;
 
-        public ClinicalRelationshipServer(ILogger<ClinicalRelationshipServer> logger, IClinicalRelationshipDelegate serviceDelegate)
+        public ClinicalRelationshipServer(ILogger<ClinicalRelationshipServer> logger, IClinicalRelationshipHandler serviceHandler)
         {
             _logger = logger;
-            _serviceDelegate = serviceDelegate;
+            _serviceHandler = serviceHandler;
         }
 
         public override async Task<ClinicalRelationshipResponse> GetClinicalRelationship(ClinicalRelationshipRequest request, ServerCallContext context)
         {
-            _logger.LogInformation(":: Performing {Class}.{Method}", nameof(IClinicalRelationshipDelegate), nameof(IClinicalRelationshipDelegate.Handle));
-            return await _serviceDelegate.Handle(request);
+            _logger.LogInformation(":: Performing {Class}.{Method}", nameof(IClinicalRelationshipHandler), nameof(IClinicalRelationshipHandler.Handle));
+            return await _serviceHandler.Handle(request);
         }
     }
 }

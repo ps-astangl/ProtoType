@@ -26,7 +26,7 @@ namespace ProtoApp
             services.AddDbContextPool<PatientRelationshipContext>(options =>
                 options.UseSqlServer(Configuration["ConnectionStrings:Context"]));
             services.AddTransient<IRelationshipRepository, RelationshipRepository>();
-            services.AddScoped<IClinicalRelationshipDelegate, ClinicalRelationshipDelegate>();
+            services.AddScoped<IClinicalRelationshipHandler, ClinicalRelationshipHandler>();
             services.AddGrpc();
         }
 

@@ -7,22 +7,20 @@ using CRISP.GRPC.ClinicalRelationship;
 using Microsoft.Extensions.Logging;
 using ProtoApp.Mapper;
 using ProtoApp.Repository;
-using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
-using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
 
 namespace ProtoApp.Handler
 {
-    public interface IClinicalRelationshipDelegate
+    public interface IClinicalRelationshipHandler
     {
         public Task<ClinicalRelationshipResponse> Handle(ClinicalRelationshipRequest clinicalRelationshipRequest);
     }
 
-    public class ClinicalRelationshipDelegate : IClinicalRelationshipDelegate
+    public class ClinicalRelationshipHandler : IClinicalRelationshipHandler
     {
-        private readonly ILogger<ClinicalRelationshipDelegate> _logger;
+        private readonly ILogger<ClinicalRelationshipHandler> _logger;
         private readonly IRelationshipRepository _relationshipRepository;
 
-        public ClinicalRelationshipDelegate(ILogger<ClinicalRelationshipDelegate> logger, IRelationshipRepository relationshipRepository)
+        public ClinicalRelationshipHandler(ILogger<ClinicalRelationshipHandler> logger, IRelationshipRepository relationshipRepository)
         {
             _logger = logger;
             _relationshipRepository = relationshipRepository;
@@ -71,7 +69,7 @@ namespace ProtoApp.Handler
 
             return response;
         }
-        private static List<Organization> ExtractOrganizations(IEnumerable<Context.Context.Models.Organization> input)
+        private static List<CRISP.GRPC.ClinicalRelationship.Organization> ExtractOrganizations(IEnumerable<Context.Context.Models.Organization> input)
         {
             var organization = input
                 ?.Where(x => x != null)
@@ -79,7 +77,7 @@ namespace ProtoApp.Handler
                 ?.ToList();
             return organization;
         }
-        private static List<Practitioner> ExtractProviders(IEnumerable<Context.Context.Models.Practitioner> input)
+        private static List<CRISP.GRPC.ClinicalRelationship.Practitioner> ExtractProviders(IEnumerable<Context.Context.Models.Practitioner> input)
         {
             var providers = input
                 ?.Where(x => x != null)
