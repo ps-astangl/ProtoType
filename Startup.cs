@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ProtoApp.GRPC;
 using ProtoApp.Repository;
+using ProtoApp.Server;
 
 namespace ProtoApp
 {

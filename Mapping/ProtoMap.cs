@@ -7,7 +7,7 @@ using Practitioner = Context.Context.Models.Practitioner;
 
 namespace ProtoApp.Models.Mapping
 {
-    public static class QuickMap
+    public static class ProtoMap
     {
         public static CRISP.GRPC.ClinicalRelationship.Practitioner ToGrpcPractitioner(this Practitioner input)
         {

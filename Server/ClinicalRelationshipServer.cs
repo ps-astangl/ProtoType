@@ -1,10 +1,10 @@
-﻿using System.Reflection.Metadata;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CRISP.GRPC.ClinicalRelationship;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using ProtoApp.GRPC;
 
-namespace ProtoApp.GRPC
+namespace ProtoApp.Server
 {
     public class ClinicalRelationshipServer : ClinicalRelationshipService.ClinicalRelationshipServiceBase
     {
