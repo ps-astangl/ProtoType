@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using Context.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
 using Microsoft.Extensions.Logging;
-using ProtoApp.Mapping;
+using ProtoApp.Mapper;
 using ProtoApp.Repository;
 using Organization = CRISP.GRPC.ClinicalRelationship.Organization;
 using Practitioner = CRISP.GRPC.ClinicalRelationship.Practitioner;
 
-namespace ProtoApp.GRPC
+namespace ProtoApp.Handler
 {
     public interface IClinicalRelationshipDelegate
     {
@@ -48,7 +48,7 @@ namespace ProtoApp.GRPC
                 };
             }
 
-            
+
             if (relationships?.Count == 0 || relationships == null)
                 return response;
 

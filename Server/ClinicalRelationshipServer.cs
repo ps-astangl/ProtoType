@@ -2,7 +2,7 @@
 using CRISP.GRPC.ClinicalRelationship;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using ProtoApp.GRPC;
+using ProtoApp.Handler;
 
 namespace ProtoApp.Server
 {

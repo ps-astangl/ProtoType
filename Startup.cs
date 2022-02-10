@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using ProtoApp.GRPC;
+using ProtoApp.Handler;
 using ProtoApp.Repository;
 using ProtoApp.Server;
 
@@ -41,13 +41,12 @@ namespace ProtoApp
             app.UseHttpsRedirection();
 
             app.UseRouting();
-            app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
+            app.UseGrpcWeb(new GrpcWebOptions {DefaultEnabled = true});
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<ClinicalRelationshipServer>()
                     .EnableGrpcWeb();
             });
-
         }
     }
 }
