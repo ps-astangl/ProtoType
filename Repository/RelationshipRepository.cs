@@ -33,6 +33,7 @@ namespace ProtoApp.Repository
                     _context
                         .Relationships
                         .Where(x => x.Patient.Eid.Equals(eid))
+                        .Include(x => x.Patient)
                         .Include(r => r.Organizations).ThenInclude(x => x.OrganizationPrograms)
                         .Include(r => r.Practitioners).ThenInclude(x => x.Demographic)
                         .ToListAsync();

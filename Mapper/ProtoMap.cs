@@ -7,6 +7,51 @@ namespace ProtoApp.Mapper
 {
     public static class ProtoMap
     {
+        public static CRISP.GRPC.ClinicalRelationship.PatientRelationship ToGrpcPatientRelationship(this Relationship input)
+        {
+            if (input == null)
+                return null;
+
+            var organizations = input
+                ?.Organizations
+                ?.Where(x => x != null)
+                ?.Select(x => x.ToGrpcOrganization())
+                ?.ToList();
+
+            var practitioners = input?.Practitioners
+                ?.Where(x => x != null)
+                ?.Select(x => x.ToGrpcPractitioner())
+                ?.ToList();
+
+            CRISP.GRPC.ClinicalRelationship.PatientRelationship patientRelationship = new PatientRelationship
+            {
+                Id = input.Id,
+                DataSource = input.DataSource?.StringOrEmpty(),
+                Smrn = input.Patient?.ToGrpcSmrn(),
+                Practitioners = {  },
+                Organizations = {  },
+            };
+
+            if (organizations?.Count != 0)
+                patientRelationship.Organizations.Add(organizations);
+
+            if (practitioners?.Count != 0)
+                patientRelationship.Practitioners.Add(practitioners);
+
+            return patientRelationship;
+        }
+
+        private static CRISP.GRPC.ClinicalRelationship.Smrn ToGrpcSmrn(this Context.Context.Models.Patient input)
+        {
+            if (input == null)
+                return null;
+
+            return new Smrn
+            {
+                Source = input.Source?.StringOrEmpty(),
+                Mrn = input.Mrn?.StringOrEmpty()
+            };
+        }
         public static CRISP.GRPC.ClinicalRelationship.Practitioner ToGrpcPractitioner(this Context.Context.Models.Practitioner input)
         {
             if (input == null)
@@ -25,16 +70,13 @@ namespace ProtoApp.Mapper
                 LicenseInformation = { },
                 OrganizationIds = {  }
             };
-            if (licenseInformation != null)
-            {
-                practitioner.LicenseInformation.Add(licenseInformation);
-            }
 
+            if (licenseInformation != null)
+                practitioner.LicenseInformation.Add(licenseInformation);
 
             if (input.OrganizationId != null)
-            {
                 practitioner.OrganizationIds.Add(input.OrganizationId.Value);
-            }
+
             return practitioner;
         }
         public static CRISP.GRPC.ClinicalRelationship.Organization ToGrpcOrganization(this Context.Context.Models.Organization input)
@@ -65,8 +107,7 @@ namespace ProtoApp.Mapper
             organization.Programs.Add(programs);
             return organization;
         }
-        private static CRISP.GRPC.ClinicalRelationship.Program ToGrpcProgram(
-            this OrganizationProgram input)
+        private static CRISP.GRPC.ClinicalRelationship.Program ToGrpcProgram(this OrganizationProgram input)
         {
             if (input == null)
                 return null;
@@ -82,7 +123,6 @@ namespace ProtoApp.Mapper
                 Address = null // TODO: Find mapping
             };
         }
-
         private static CRISP.GRPC.ClinicalRelationship.Practitioner.Types.ProviderType ToProviderType(this string input)
         {
             if (input == null)

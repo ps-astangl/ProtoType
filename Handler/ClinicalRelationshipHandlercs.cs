@@ -44,27 +44,29 @@ namespace ProtoApp.Handler
                     ErrorReason = exception.Message
                 };
             }
-
-
             if (relationships?.Count == 0 || relationships == null)
                 return response;
 
             // Loop through each result and collect the information for the repeated response elements.
-            foreach (var relationship in relationships)
-            {
-                var orgs =     ExtractOrganizations(relationship.Organizations);
-                var providers = ExtractProviders(relationship.Practitioners);
+            // foreach (var relationship in relationships)
+            // {
+            //     relationship.ToGrpcPatientRelationship();
+            //     var orgs =     ExtractOrganizations(relationship.Organizations);
+            //     var providers = ExtractProviders(relationship.Practitioners);
+            //
+            //     if (orgs?.Count != 0)
+            //         response.PatientRelationships.Organizations.Add(orgs);
+            //
+            //     if (providers?.Count != 0)
+            //         response.PatientRelationships.Practitioners.Add(providers);
+            // }
 
-                if (orgs?.Count != 0)
-                    response.PatientRelationships.Organizations.Add(orgs);
-
-                if (providers?.Count != 0)
-                    response.PatientRelationships.Practitioners.Add(providers);
-            }
+            var foo = ExtractRelationship(relationships);
+            response.PatientRelationships.Add(foo);
 
             _logger.LogInformation(":: Relationships Found {NumberOfRelationships}", relationships?.Count);
-            _logger.LogInformation(":: Organizations Found {NumberOfOrganizations}", response?.PatientRelationships?.Organizations?.Count);
-            _logger.LogInformation(":: Practitioners Found {NumberOfPractitioners}", response?.PatientRelationships?.Practitioners?.Count);
+            // _logger.LogInformation(":: Organizations Found {NumberOfOrganizations}", response?.PatientRelationships?.Organizations?.Count);
+            // _logger.LogInformation(":: Practitioners Found {NumberOfPractitioners}", response?.PatientRelationships?.Practitioners?.Count);
 
             return response;
         }
@@ -88,16 +90,21 @@ namespace ProtoApp.Handler
 
         private static ClinicalRelationshipResponse InitializeResponse()
         {
-            var response = new ClinicalRelationshipResponse
+            ClinicalRelationshipResponse clinicalRelationshipResponse = new ClinicalRelationshipResponse
             {
-                PatientRelationships = new PatientRelationship
-                {
-                    Organizations = { },
-                    Practitioners = { }
-                },
+                PatientRelationships = {  },
                 Error = null
             };
-            return response;
+            return clinicalRelationshipResponse;
+        }
+
+        private static List<PatientRelationship> ExtractRelationship(IEnumerable<Relationship> input)
+        {
+            var relations = input
+                ?.Where(x => x != null)
+                ?.Select(x => x.ToGrpcPatientRelationship())
+                ?.ToList();
+            return relations;
         }
     }
 }
