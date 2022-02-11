@@ -11,7 +11,7 @@ namespace ProtoApp.Repository
 {
     public interface IRelationshipRepository
     {
-        public Task<List<Relationship>> GetRelationshipsByEid(string eid, string datasource);
+        public Task<List<Relationship>> GetRelationshipsByEid(string eid);
     }
 
     public class RelationshipRepository : IRelationshipRepository
@@ -25,14 +25,14 @@ namespace ProtoApp.Repository
             _context = context;
         }
 
-        public Task<List<Relationship>> GetRelationshipsByEid(string eid, string datasource = "Panel")
+        public Task<List<Relationship>> GetRelationshipsByEid(string eid)
         {
             try
             {
                 var query =
                     _context
                         .Relationships
-                        .Where(x => x.Patient.Eid.Equals(eid) && x.DataSource.Equals(datasource))
+                        .Where(x => x.Patient.Eid.Equals(eid))
                         .Include(r => r.Organizations).ThenInclude(x => x.OrganizationPrograms)
                         .Include(r => r.Practitioners).ThenInclude(x => x.Demographic)
                         .ToListAsync();

@@ -34,8 +34,7 @@ namespace ProtoApp.Handler
             try
             {
                 relationships = await _relationshipRepository.GetRelationshipsByEid(
-                    clinicalRelationshipRequest.PatientIdentifiers.Eid,
-                    clinicalRelationshipRequest.PatientIdentifiers.DataSource);
+                    clinicalRelationshipRequest.PatientIdentifiers.Eid);
             }
             catch (Exception exception)
             {

@@ -16,10 +16,7 @@ namespace ProtoApp.Mapper
             CRISP.GRPC.ClinicalRelationship.Practitioner practitioner = new CRISP.GRPC.ClinicalRelationship.Practitioner
             {
                 Id = input.Id,
-                Name = string.IsNullOrWhiteSpace(input.DisplayName) ? new Name
-                {
-                    DisplayName = input?.DisplayName?.StringOrEmpty()
-                } : null,
+                Name = new Name { DisplayName = input?.DisplayName?.StringOrEmpty() },
                 Address = input.Demographic?.ToGrpcAddress(),
                 ContactInformation = input.Demographic?.ToGrpcContactInformation(),
                 ProviderType = input?.MedicalSpeciality?.ToProviderType() ??
