@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Context.Context;
-using Context.Context.Models;
+using Crisp.ClinicalDataRepository.ClinicalRelationships;
+using Crisp.ClinicalDataRepository.ClinicalRelationships.Context;
+using Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 

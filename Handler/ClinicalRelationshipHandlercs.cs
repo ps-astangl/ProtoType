@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Context.Context.Models;
+using Crisp.ClinicalDataRepository.ClinicalRelationships;
+using Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
 using Microsoft.Extensions.Logging;
 using ProtoApp.Mapper;
@@ -33,8 +34,7 @@ namespace ProtoApp.Handler
             List<Relationship> relationships = null;
             try
             {
-                relationships = await _relationshipRepository.GetRelationshipsByEid(
-                    clinicalRelationshipRequest.PatientIdentifiers.Eid);
+                relationships = await _relationshipRepository.GetRelationshipsByEid(clinicalRelationshipRequest.PatientIdentifiers.Eid);
             }
             catch (Exception exception)
             {
@@ -68,7 +68,7 @@ namespace ProtoApp.Handler
 
             return response;
         }
-        private static List<CRISP.GRPC.ClinicalRelationship.Organization> ExtractOrganizations(IEnumerable<Context.Context.Models.Organization> input)
+        private static List<CRISP.GRPC.ClinicalRelationship.Organization> ExtractOrganizations(IEnumerable<Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models.Organization> input)
         {
             var organization = input
                 ?.Where(x => x != null)
@@ -76,7 +76,7 @@ namespace ProtoApp.Handler
                 ?.ToList();
             return organization;
         }
-        private static List<CRISP.GRPC.ClinicalRelationship.Practitioner> ExtractProviders(IEnumerable<Context.Context.Models.Practitioner> input)
+        private static List<CRISP.GRPC.ClinicalRelationship.Practitioner> ExtractProviders(IEnumerable<Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models.Practitioner> input)
         {
             var providers = input
                 ?.Where(x => x != null)

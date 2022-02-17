@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Linq;
-using Context.Context.Models;
+using Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models;
 using CRISP.GRPC.ClinicalRelationship;
 
 namespace ProtoApp.Mapper
 {
     public static class ProtoMap
     {
-        public static CRISP.GRPC.ClinicalRelationship.Practitioner ToGrpcPractitioner(this Context.Context.Models.Practitioner input)
+        public static CRISP.GRPC.ClinicalRelationship.Practitioner ToGrpcPractitioner(this Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models.Practitioner input)
         {
             if (input == null)
                 return null;
@@ -37,7 +37,7 @@ namespace ProtoApp.Mapper
             }
             return practitioner;
         }
-        public static CRISP.GRPC.ClinicalRelationship.Organization ToGrpcOrganization(this Context.Context.Models.Organization input)
+        public static CRISP.GRPC.ClinicalRelationship.Organization ToGrpcOrganization(this Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models.Organization input)
         {
             if (input == null)
                 return null;
@@ -90,7 +90,7 @@ namespace ProtoApp.Mapper
             var hasType = Enum.TryParse<CRISP.GRPC.ClinicalRelationship.Practitioner.Types.ProviderType>(input, true, out var licenseType);
             return hasType ? licenseType : CRISP.GRPC.ClinicalRelationship.Practitioner.Types.ProviderType.None;
         }
-        private static LicenseInformation ToGrpcLicenseInformation(this Context.Context.Models.Practitioner input)
+        private static LicenseInformation ToGrpcLicenseInformation(this Crisp.ClinicalDataRepository.ClinicalRelationships.Context.Models.Practitioner input)
         {
             if (input == null)
                 return null;
